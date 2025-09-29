@@ -27,23 +27,32 @@ const gifs   = toList(gifMods,   /\.(gif|webp)$/i, 'gif');
       :root{
         --bg:#f08030; --bg2:#f18c44; --panel:#ffffff; --ink:#0f172a; --muted:#6b7280; --radius:16px;
         --ring:0 0 0 1px rgba(15,23,42,.06), 0 1px 2px rgba(15,23,42,.08), 0 8px 24px rgba(15,23,42,.08);
-        --accent:#111827; /* color de controles (manijas, fill, botones primarios) */
+        --accent:#111827;
       }
-      *{box-sizing:border-box} html,body{height:100%}
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      html{scroll-behavior:smooth} /* fallback suave para anclas */
       body{
-        margin:0;
-        font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-        color:var(--ink);
-        display:grid; place-items:center; padding:24px;
-        background:
-          radial-gradient(900px 420px at 15% -10%, var(--bg2), transparent 60%) fixed,
-          linear-gradient(180deg, var(--bg2), var(--bg)) fixed;
+        margin:0; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+        color:var(--ink); display:grid; place-items:center; padding:24px;
+        background: radial-gradient(900px 420px at 15% -10%, var(--bg2), transparent 60%) fixed,
+                    linear-gradient(180deg, var(--bg2), var(--bg)) fixed;
       }
       .wrap{width:100%; max-width:1200px}
-      .header{display:flex; align-items:center; gap:16px; margin-bottom:14px}
-      h1{font-size:28px; margin:0; font-weight:800}
-      h2{font-size:20px; margin:0 0 12px; font-weight:800}
+
+      /* Header + menú */
+      .header{display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:14px}
+      .brand{display:flex; align-items:center; gap:12px}
       .logo{width:60px; height:60px; border-radius:12px; object-fit:contain}
+      h1{font-size:22px; margin:0; font-weight:800}
+      .menu{display:flex; gap:8px}
+      .menu a{
+        padding:10px 12px; border-radius:10px; font-weight:700; text-decoration:none;
+        color:var(--ink); background:rgba(255,255,255,.6); border:1px solid rgba(2,6,23,.12)
+      }
+      .menu a:hover{background:#fff}
+
+      h2{font-size:20px; margin:0 0 12px; font-weight:800}
 
       .panel{background:var(--panel); border-radius:var(--radius); box-shadow:var(--ring);
              padding:22px; border:1px solid rgba(2,6,23,.06)}
@@ -61,19 +70,13 @@ const gifs   = toList(gifMods,   /\.(gif|webp)$/i, 'gif');
       .btn.primary:hover{filter:brightness(.9)}
       .fineprint{text-align:center; margin-top:12px; color:rgba(0,0,0,.75); font-size:12px}
 
-      /* ====== Galería 3 columnas ====== */
-      .media-grid{margin-top:18px; display:grid; gap:16px; grid-template-columns: 1fr 1.3fr 1fr; align-items:start;}
-      .media-col h2{margin-bottom:10px}
       .grid{display:grid; gap:14px}
-      .photos .grid, .gifs .grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
-      .photos img, .gifs img{width:100%; display:block; border-radius:10px; background:#fff; box-shadow:var(--ring)}
-      .photos figure, .gifs figure{margin:0}
       .videos .grid{grid-template-columns:1fr}
       .vid{position:relative; background:#fff; padding:12px; border-radius:12px; box-shadow:var(--ring)}
       .vid video{width:100%; aspect-ratio:16/9; display:block; border-radius:10px}
       .caption{margin:8px 0 0; font-size:12px; color:var(--muted); text-align:center}
 
-      /* ====== Barra de recorte unificada ====== */
+      /* Recorte: barra unificada */
       .clipper{margin-top:12px; display:grid; gap:10px}
       .trimbar{display:grid; gap:8px}
       .track{position:relative; height:48px; user-select:none}
@@ -96,28 +99,38 @@ const gifs   = toList(gifMods,   /\.(gif|webp)$/i, 'gif');
       .trim-actions{display:flex; gap:8px; justify-content:flex-end}
       .btn.sm{padding:10px 12px; border-radius:10px; font-weight:700}
 
-      /* ====== Overlay "Recortando…" con progreso ====== */
-      .overlay{position:absolute; inset:12px; border-radius:12px; background:rgba(255,255,255,.92);
-               display:none; place-items:center; text-align:center; gap:12px; padding:18px; margin-bottom: 32px;}
+      /* Overlay recortando (compacto y por encima) */
+      .overlay{position:absolute; inset:12px; border-radius:12px; background:rgba(255,255,255,.94);
+               display:none; place-items:center; place-content:center; gap:6px; padding:14px; z-index:100; margin-bottom: 40px;}
       .vid.is-clipping .overlay{display:grid}
       .spinner{width:32px; height:32px; border-radius:50%; border:3px solid #e5e7eb; border-top-color:var(--accent);
                animation:spin .8s linear infinite}
       @keyframes spin{to{transform:rotate(360deg)}}
-      .progress{width:100%; max-width:520px; height:8px; background:#e5e7eb; border-radius:999px; overflow:hidden}
+      .progress{width:min(100%,420px); height:8px; background:#e5e7eb; border-radius:999px; overflow:hidden}
       .bar{width:0%; height:100%; background:var(--accent); transition:width .1s linear}
 
-      @media (max-width: 1024px){ .media-grid{grid-template-columns:1fr} }
-      @media (max-width:720px){ .header{flex-direction:column; align-items:flex-start} }
+      @media (max-width:720px){
+        .header{flex-direction:column; align-items:flex-start}
+      }
     </style>
   </head>
   <body>
     <div class="wrap">
-      <!-- Cabecera + pago -->
+      <!-- Header + menú -->
       <div class="header">
-        <img src="/mascot.png" alt="Logo" class="logo" />
-        <h1>Transferime por cualquier medio de pago</h1>
+        <div class="brand">
+          <img src="/mascot.png" alt="Logo" class="logo" />
+          <h1>Basketnaranja</h1>
+        </div>
+    <nav class="menu" aria-label="Secciones">
+		<a href="/#pagar"  data-scroll="pagar">Pagar</a>
+		<a href="/#videos" data-scroll="videos">Videos</a>
+	</nav>
       </div>
-	  <div class="panel">
+
+      <!-- Pagar -->
+      <div class="panel" id="pagar">
+        <h2>Pagar</h2>
         <p class="lead">Escaneá el QR o tocá el botón para abrir directamente el link de pago.</p>
         <div class="qr-wrap">
           <img class="qr" src="/qr.png" alt="QR de pago Mercado Pago" />
@@ -129,348 +142,200 @@ const gifs   = toList(gifMods,   /\.(gif|webp)$/i, 'gif');
         <p class="fineprint">Las transferencias/link de pago se procesan en Mercado Pago. Esta página no guarda datos.</p>
       </div>
 
-      <!-- ====== Media: Photos | Videos | GIFs ====== -->
-      <div style={"margin-top:1rem"}>
-        <!-- PHOTOS (izquierda) -->
-        <!-- (dejar comentado si no lo usás)
-        <section class="panel media-col photos">
-          <h2>Photos</h2>
-          {photos.length > 0 ? (
-            <div class="grid">
-              {photos.map((p) => (
-                <figure>
-                  <img src={p.url} alt={p.name} loading="lazy" />
-                  <figcaption class="caption">{p.name}</figcaption>
-                </figure>
-              ))}
-            </div>
-          ) : (<p class="lead">Aún no hay fotos.</p>)}
-        </section> -->
+      <!-- Videos -->
+      <section class="panel media-col videos" id="videos" style="margin-top:1rem">
+        <h2>Videos</h2>
+        {videos.length > 0 ? (
+          <div class="grid">
+            {videos.map((v) => (
+              <figure class="vid">
+                <video src={v.url} controls preload="metadata"></video>
+                <figcaption class="caption">{v.name}</figcaption>
 
-        <!-- VIDEOS (centro) -->
-        <section class="panel media-col videos">
-          <h2>Videos</h2>
-          {videos.length > 0 ? (
-            <div class="grid">
-              {videos.map((v) => (
-                <figure class="vid">
-                  <!-- sin playsinline para favorecer fullscreen en iOS si no está recortando -->
-                  <video src={v.url} controls preload="metadata"></video>
-                  <figcaption class="caption">{v.name}</figcaption>
-
-                  <!-- Barra única con dos manijas + acciones -->
-                  <div class="clipper">
-                    <div class="trimbar">
-                      <div class="track">
-                        <div class="rail"></div>
-                        <div class="fill"></div>
-                        <div class="handle h-start" tabindex="0" aria-label="Inicio"></div>
-                        <div class="handle h-end"   tabindex="0" aria-label="Fin"></div>
-                        <div class="playhead"></div>
-                      </div>
-                      <div class="trim-info">
-                        <span class="t-start">00:00</span>
-                        <span class="t-len">00:00</span>
-                        <span class="t-end">00:00</span>
-                      </div>
+                <div class="clipper">
+                  <div class="trimbar">
+                    <div class="track">
+                      <div class="rail"></div>
+                      <div class="fill"></div>
+                      <div class="handle h-start" tabindex="0" aria-label="Inicio"></div>
+                      <div class="handle h-end"   tabindex="0" aria-label="Fin"></div>
+                      <div class="playhead"></div>
                     </div>
-                    <div class="trim-actions">
-                      <button class="btn sm" type="button" data-act="preview">Previsualizar</button>
-                      <button class="btn primary sm btn-clip" type="button">Recortar y descargar</button>
+                    <div class="trim-info">
+                      <span class="t-start">00:00</span>
+                      <span class="t-len">00:00</span>
+                      <span class="t-end">00:00</span>
                     </div>
                   </div>
-
-                  <!-- Overlay proceso -->
-                  <div class="overlay">
-                    <div class="display: grid; gap: 12px; justify-items: center; align-items: center; padding-bottom: 8px;">
-						<div style="display: flex; justify-content: center; gap: 8px; margin-bottom: 4px;">
-							<div class="spinner" aria-hidden="true"></div>
-						</div>
-                      <div style="font-weight:700; color:var(--accent)">Recortando…</div>
-                      <div class="lead" style="margin:4px 0 10px">Generando clip en tu navegador</div>
-                      <div class="progress"><div class="bar"></div></div>
-                    </div>
+                  <div class="trim-actions">
+                    <button class="btn sm" type="button" data-act="preview">Previsualizar</button>
+                    <button class="btn primary sm btn-clip" type="button">Recortar y descargar</button>
                   </div>
-                </figure>
-              ))}
-            </div>
-          ) : (<p class="lead">Aún no hay videos.</p>)}
-        </section>
+                </div>
 
-        <!-- GIFS (derecha) -->
-        <!-- (dejar comentado si no lo usás)
-        <section class="panel media-col gifs">
-          <h2>GIFs</h2>
-          {gifs.length > 0 ? (
-            <div class="grid">
-              {gifs.map((g) => (
-                <figure>
-                  <img src={g.url} alt={g.name} loading="lazy" />
-                  <figcaption class="caption">{g.name}</figcaption>
-                </figure>
-              ))}
-            </div>
-          ) : (<p class="lead">Aún no hay GIFs.</p>)}
-        </section> -->
-      </div>
+                <div class="overlay">
+                  <div class="spinner" aria-hidden="true"></div>
+                  <div style="font-weight:700; color:var(--accent)">Recortando…</div>
+                  <div class="lead" style="margin:2px 0 6px; text-align: center;">Generando clip en tu navegador</div>
+                  <div class="progress"><div class="bar"></div></div>
+                </div>
+              </figure>
+            ))}
+          </div>
+        ) : (<p class="lead">Aún no hay videos.</p>)}
+      </section>
     </div>
 
-	<script is:inline>
-		// ==== Estado fullscreen sólo cuando no estamos ocupados ====
-		let IS_BUSY = false;
-		function goFullscreen(el){
-		  if (IS_BUSY || document.fullscreenElement) return;
-		  try { el.requestFullscreen?.(); el.webkitEnterFullscreen?.(); } catch {}
-		}
-		document.querySelectorAll('.videos video').forEach((v) => {
-		  v.addEventListener('play', () => goFullscreen(v));
-		  v.addEventListener('pointerup', () => { if (!v.paused) goFullscreen(v); });
-		});
-	  
-		// ========= Utilidades =========
-		const fmt = (t)=>{
-		  const s = Math.floor(t%60).toString().padStart(2,'0');
-		  const m = Math.floor((t/60)%60).toString().padStart(2,'0');
-		  const h = Math.floor(t/3600);
-		  return h ? `${h}:${m}:${s}` : `${m}:${s}`;
-		};
-		const ensureMeta = (video) =>
-		  video.readyState >= 1 ? Promise.resolve()
-			: new Promise(res => video.addEventListener('loadedmetadata', res, { once: true }));
-		const seekTo = (video, t) => new Promise((res) => {
-		  const target = Math.max(0, Math.min(t, isFinite(video.duration) ? video.duration : t));
-		  video.addEventListener('seeked', res, { once:true });
-		  video.currentTime = target;
-		});
-		const pickMime = ()=>{
-		  const opts=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm','video/mp4;codecs=h264,aac','video/mp4'];
-		  return opts.find(t => (window.MediaRecorder && MediaRecorder.isTypeSupported?.(t))) || '';
-		};
-		const sleep = (ms)=> new Promise(r=>setTimeout(r, ms));
-	  
-		// --- Nuevo: garantizar un stream utilizable desde <video> ---
-		async function getVideoStream(video){
-		  const fn = video.captureStream || video.mozCaptureStream || video.webkitCaptureStream;
-		  if (!fn) return null;
-		  const stream = fn.call(video);
-	  
-		  // “Calentar” tracks si vienen vacías
-		  if (!stream.getVideoTracks().length && !stream.getAudioTracks().length) {
-			const t = video.currentTime, wasPaused = video.paused;
-			video.muted = true;
-			try { await video.play(); await sleep(50); } catch {}
-			try { video.pause(); } catch {}
-			try { video.currentTime = t; } catch {}
-			if (wasPaused) { try { video.pause(); } catch {} }
-		  }
-		  return stream;
-		}
-	  
-		// --- Fallback: ffmpeg.wasm bajo demanda ---
-		async function ensureFFmpeg(){
-		  if (window.FFmpeg) return window.FFmpeg;
-		  await new Promise((res, rej)=>{
-			const s = document.createElement('script');
-			s.src = 'https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.min.js';
-			s.onload = res; s.onerror = rej; document.head.appendChild(s);
-		  });
-		  return window.FFmpeg;
-		}
-		async function trimWithFFmpeg(src, start, end, onProgress){
-		  const FF = await ensureFFmpeg();
-		  const { createFFmpeg, fetchFile } = FF;
-		  const ffmpeg = createFFmpeg({ log:false, progress:({ratio})=> onProgress?.(ratio || 0) });
-		  await ffmpeg.load();
-	  
-		  // Descargar el archivo fuente
-		  const data = await fetchFile(src);
-		  ffmpeg.FS('writeFile', 'in.bin', data);
-	  
-		  // Recorte: primero intentamos copia sin re-codificar (rápido). Si falla, re-codificamos a webm.
-		  try {
-			await ffmpeg.run('-ss', String(start), '-to', String(end), '-i', 'in.bin', '-c', 'copy', 'out.mp4');
-			const out = ffmpeg.FS('readFile', 'out.mp4');
-			return new Blob([out.buffer], { type: 'video/mp4' });
-		  } catch {
-			await ffmpeg.run('-ss', String(start), '-to', String(end), '-i', 'in.bin', '-c:v', 'libvpx-vp9', '-c:a', 'libopus', '-b:v', '1M', 'out.webm');
-			const out = ffmpeg.FS('readFile', 'out.webm');
-			return new Blob([out.buffer], { type: 'video/webm' });
-		  }
-		}
-	  
-		const MIN_GAP = 0.2; // s
-	  
-		// ========= Lógica de recorte por tarjeta =========
-		document.querySelectorAll('.vid').forEach((card) => {
-		  const video     = card.querySelector('video');
-		  const track     = card.querySelector('.track');
-		  const fill      = card.querySelector('.fill');
-		  const startH    = card.querySelector('.h-start');
-		  const endH      = card.querySelector('.h-end');
-		  const playhead  = card.querySelector('.playhead');
-		  const tStart    = card.querySelector('.t-start');
-		  const tEnd      = card.querySelector('.t-end');
-		  const tLen      = card.querySelector('.t-len');
-		  const btnPrev   = card.querySelector('[data-act="preview"]');
-		  const btnClip   = card.querySelector('.btn-clip');
-		  const overlay   = card.querySelector('.overlay');
-		  const bar       = overlay.querySelector('.bar');
-	  
-		  let dur = 0, startPct = 0, endPct = 1, dragging = null;
-	  
-		  const minGapPct = ()=> dur ? (MIN_GAP/dur) : 0;
-		  const setPositions = ()=>{
-			const l = startPct*100, r = endPct*100;
-			startH.style.left = l + '%';
-			endH.style.left   = r + '%';
-			fill.style.left   = l + '%';
-			fill.style.width  = Math.max(0, r - l) + '%';
-			const s = dur*startPct, e = dur*endPct;
-			tStart.textContent = fmt(s||0);
-			tEnd.textContent   = fmt(e||0);
-			tLen.textContent   = fmt(Math.max(0, e - s));
-		  };
-		  const pctFromEvent = (ev)=>{
-			const rect = track.getBoundingClientRect();
-			const x = ('touches' in ev && ev.touches?.length) ? ev.touches[0].clientX : ev.clientX;
-			return Math.max(0, Math.min(1, (x - rect.left) / rect.width));
-		  };
-	  
-		  const onMove = (ev)=>{
-			let p = pctFromEvent(ev), mg = minGapPct();
-			if (dragging === 'start') startPct = Math.min(endPct - mg, p);
-			if (dragging === 'end')   endPct   = Math.max(startPct + mg, p);
-			setPositions();
-		  };
-		  const endDrag = ()=>{ dragging = null; window.removeEventListener('pointermove', onMove); };
-		  const startDrag = (which)=> (ev)=>{
-			dragging = which; ev.preventDefault();
-			window.addEventListener('pointermove', onMove);
-			window.addEventListener('pointerup', endDrag, { once:true });
-		  };
-		  startH.addEventListener('pointerdown', startDrag('start'));
-		  endH.addEventListener('pointerdown', startDrag('end'));
-		  track.addEventListener('pointerdown', (ev)=>{
-			if (ev.target === startH || ev.target === endH) return;
-			const p = pctFromEvent(ev), mg = minGapPct();
-			if (Math.abs(p - startPct) <= Math.abs(p - endPct)) startPct = Math.min(endPct - mg, p);
-			else endPct = Math.max(startPct + mg, p);
-			setPositions();
-		  });
-	  
-		  const step = 0.005;
-		  function keyMove(which, dir){
-			const mg = minGapPct();
-			if (which === 'start') startPct = Math.max(0, Math.min(endPct - mg, startPct + dir*step));
-			else endPct = Math.min(1, Math.max(startPct + mg, endPct + dir*step));
-			setPositions();
-		  }
-		  startH.addEventListener('keydown', (e)=>{ if (e.key==='ArrowLeft') keyMove('start',-1); if (e.key==='ArrowRight') keyMove('start',1); });
-		  endH.addEventListener('keydown',   (e)=>{ if (e.key==='ArrowLeft') keyMove('end',-1);   if (e.key==='ArrowRight') keyMove('end',1);   });
-	  
-		  ensureMeta(video).then(()=>{ dur = video.duration || 0; startPct = 0; endPct = 1; setPositions(); });
-	  
-		  // ---- Previsualizar ----
-		  btnPrev?.addEventListener('click', async ()=>{
-			await ensureMeta(video);
-			IS_BUSY = true; card.classList.add('is-previewing');
-			try {
-			  const s = dur*startPct, e = dur*endPct;
-			  video.muted = true; await seekTo(video, s);
-			  const update = ()=>{
-				const p = Math.min(1, Math.max(0, (video.currentTime - s) / Math.max(1e-6, e - s)));
-				playhead.style.left = (startPct + p*(endPct - startPct))*100 + '%';
-				if (video.currentTime >= e) {
-				  video.pause(); video.removeEventListener('timeupdate', update);
-				  card.classList.remove('is-previewing'); IS_BUSY = false;
-				}
-			  };
-			  video.addEventListener('timeupdate', update);
-			  await video.play();
-			} catch {
-			  card.classList.remove('is-previewing'); IS_BUSY = false;
-			}
-		  });
-	  
-		  // ---- Recortar & descargar ----
-		  btnClip?.addEventListener('click', async ()=>{
-			await ensureMeta(video);
-			const s = dur*startPct, e = dur*endPct;
-			IS_BUSY = true;
-			btnClip.disabled = true; btnClip.textContent = 'Cortando…';
-			card.classList.add('is-clipping');
-			bar.style.width = '0%';
-	  
-			const nameBase = (card.querySelector('.caption')?.textContent || 'clip').replace(/\s+/g,'-');
-	  
-			// 1) Intentar vía captureStream + MediaRecorder (rápido)
-			let usedFF = false;
-			let oldTime = video.currentTime, wasPaused = video.paused, oldVis = video.style.visibility;
-			try {
-			  const mime = pickMime();
-			  const stream = await getVideoStream(video);
-			  if (!mime || !stream) throw new Error('no-capture');
-	  
-			  video.muted = true;
-			  video.style.visibility = 'hidden';
-			  await seekTo(video, s);
-	  
-			  let chunks = [];
-			  const rec = new MediaRecorder(stream, { mimeType: mime });
-			  rec.ondataavailable = (ev)=> ev.data && ev.data.size && chunks.push(ev.data);
-			  const stopped = new Promise(res => rec.onstop = res);
-	  
-			  rec.start();
-			  const updateProg = ()=>{
-				const pct = Math.min(1, Math.max(0, (video.currentTime - s) / Math.max(1e-6, e - s)));
-				bar.style.width = (pct*100) + '%';
-				if (video.currentTime >= e) { try{rec.requestData?.();}catch{} try{rec.stop();}catch{} video.removeEventListener('timeupdate', updateProg); }
-			  };
-			  video.addEventListener('timeupdate', updateProg);
-	  
-			  await video.play();
-			  await stopped;
-	  
-			  const blob = new Blob(chunks, { type: mime });
-			  if (!blob.size) throw new Error('empty');
-	  
-			  const ext = (mime.split('/')[1] || 'webm').split(';')[0];
-			  const url = URL.createObjectURL(blob);
-			  const a = Object.assign(document.createElement('a'), {
-				href: url,
-				download: `${nameBase}-${fmt(s).replace(/:/g,'')}-${fmt(e).replace(/:/g,'')}.${ext}`
-			  });
-			  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-			} catch (err){
-			  // 2) Fallback ffmpeg.wasm (lento pero seguro, también funciona en Safari)
-			  usedFF = true;
-			  try {
-				const blob = await trimWithFFmpeg(video.currentSrc || video.src, s, e, (ratio)=> bar.style.width = (ratio*100)+'%');
-				const ext = blob.type.includes('mp4') ? 'mp4' : 'webm';
-				const url = URL.createObjectURL(blob);
-				const a = Object.assign(document.createElement('a'), {
-				  href: url,
-				  download: `${nameBase}-${fmt(s).replace(/:/g,'')}-${fmt(e).replace(/:/g,'')}.${ext}`
-				});
-				document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-			  } catch(e2){
-				console.error(e2);
-				alert('No se pudo generar el recorte.\nProbá en Chrome/Edge de escritorio o vuelve a intentar.');
-			  }
-			} finally {
-			  if (!usedFF) {
-				try { video.pause(); } catch {}
-				try { video.currentTime = oldTime; } catch {}
-				video.style.visibility = oldVis || '';
-				if (!wasPaused) { try { await video.play(); } catch {} } else { try { video.pause(); } catch {} }
-			  }
-			  btnClip.disabled = false; btnClip.textContent = 'Recortar y descargar';
-			  card.classList.remove('is-clipping');
-			  IS_BUSY = false;
-			  bar.style.width = '0%';
-			}
-		  });
-		});
-	  </script>	  
+    <script is:inline>
+      // ===== Smooth scroll por "rutas" /pagar y /videos =====
+      function scrollToId(id){
+        const el = document.getElementById(id);
+        if (!el) return;
+        const y = el.getBoundingClientRect().top + window.scrollY - 10;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+      function getSlug(pathname){
+        // soporta /, /pagar, /videos y subcarpetas (p.ej. /app/pagar)
+        const parts = pathname.split('?')[0].split('#')[0].split('/').filter(Boolean);
+        return parts[parts.length - 1] || '';
+      }
+
+	  function routeToSection() {
+    const slug = location.hash.replace('#','') || getSlug(location.pathname);
+		if (slug === 'pagar')  scrollToId('pagar');
+		if (slug === 'videos') scrollToId('videos');
+	}
+	window.addEventListener('DOMContentLoaded', routeToSection);
+	window.addEventListener('popstate', routeToSection);
+	window.addEventListener('hashchange', routeToSection);
+      function routeToSection(pathname = location.pathname){
+        const slug = getSlug(pathname);
+        if (slug === 'pagar')  scrollToId('pagar');
+        if (slug === 'videos') scrollToId('videos');
+      }
+      // Click en menú: evita recarga, hace scroll y actualiza historia
+      document.querySelectorAll('[data-scroll]').forEach(a=>{
+        a.addEventListener('click', (e)=>{
+          e.preventDefault();
+          const id = a.getAttribute('data-scroll');
+          history.pushState({}, '', '/' + id);
+          routeToSection();
+        });
+      });
+      // Al cargar y al usar atrás/adelante
+      window.addEventListener('DOMContentLoaded', routeToSection);
+      window.addEventListener('popstate', ()=> routeToSection());
+
+      // ===== Copiar link de pago
+      const PAYMENT_URL = 'https://mpago.la/2gWsByC';
+      document.getElementById('copyLink')?.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(PAYMENT_URL);
+          const btn = document.getElementById('copyLink');
+          const old = btn.textContent;
+          btn.textContent = '¡Link copiado!';
+          setTimeout(() => (btn.textContent = old), 1500);
+        } catch {}
+      });
+
+      // ===== (tu lógica de fullscreen y recorte queda igual que la versión anterior) =====
+      let IS_BUSY = false;
+      function goFullscreen(el){
+        if (IS_BUSY || document.fullscreenElement) return;
+        try { el.requestFullscreen?.(); el.webkitEnterFullscreen?.(); } catch {}
+      }
+      document.querySelectorAll('.videos video').forEach((v) => {
+        v.addEventListener('play', () => goFullscreen(v));
+        v.addEventListener('pointerup', () => { if (!v.paused) goFullscreen(v); });
+      });
+
+      // --- utilidades tiempo + trimming (las que ya tenías) ---
+      const fmt=(t)=>{const s=Math.floor(t%60).toString().padStart(2,'0');const m=Math.floor((t/60)%60).toString().padStart(2,'0');const h=Math.floor(t/3600);return h?`${h}:${m}:${s}`:`${m}:${s}`;};
+      const ensureMeta=(v)=>v.readyState>=1?Promise.resolve():new Promise(res=>v.addEventListener('loadedmetadata',res,{once:true}));
+      const seekTo=(v,t)=>new Promise(res=>{const T=Math.max(0,Math.min(t,isFinite(v.duration)?v.duration:t));v.addEventListener('seeked',res,{once:true});v.currentTime=T;});
+      const pickMime=()=>['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm','video/mp4;codecs=h264,aac','video/mp4'].find(t=>(window.MediaRecorder&&MediaRecorder.isTypeSupported?.(t)))||'';
+      const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));
+      async function getVideoStream(video){const fn=video.captureStream||video.mozCaptureStream||video.webkitCaptureStream;if(!fn)return null;const s=fn.call(video);if(!s.getVideoTracks().length&&!s.getAudioTracks().length){const t=video.currentTime,w=video.paused;video.muted=true;try{await video.play();await sleep(50);}catch{}try{video.pause();}catch{}try{video.currentTime=t;}catch{}if(w){try{video.pause();}catch{}}}return s;}
+      async function ensureFFmpeg(){if(window.FFmpeg)return window.FFmpeg;await new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});return window.FFmpeg;}
+      async function trimWithFFmpeg(src,start,end,onProgress){const FF=await ensureFFmpeg();const{createFFmpeg,fetchFile}=FF;const ff=createFFmpeg({log:false,progress:({ratio})=>onProgress?.(ratio||0)});await ff.load();const data=await fetchFile(src);ff.FS('writeFile','in.bin',data);try{await ff.run('-ss',String(start),'-to',String(end),'-i','in.bin','-c','copy','out.mp4');const out=ff.FS('readFile','out.mp4');return new Blob([out.buffer],{type:'video/mp4'});}catch{await ff.run('-ss',String(start),'-to',String(end),'-i','in.bin','-c:v','libvpx-vp9','-c:a','libopus','-b:v','1M','out.webm');const out=ff.FS('readFile','out.webm');return new Blob([out.buffer],{type:'video/webm'});}}
+
+      const MIN_GAP=0.2;
+
+      document.querySelectorAll('.vid').forEach((card)=>{
+        const video=card.querySelector('video');
+        const track=card.querySelector('.track');
+        const fill =card.querySelector('.fill');
+        const startH=card.querySelector('.h-start');
+        const endH  =card.querySelector('.h-end');
+        const playhead=card.querySelector('.playhead');
+        const tStart=card.querySelector('.t-start');
+        const tEnd  =card.querySelector('.t-end');
+        const tLen  =card.querySelector('.t-len');
+        const btnPrev=card.querySelector('[data-act="preview"]');
+        const btnClip=card.querySelector('.btn-clip');
+        const overlay=card.querySelector('.overlay');
+        const bar=overlay.querySelector('.bar');
+
+        let dur=0,startPct=0,endPct=1,dragging=null;
+        const minGapPct=()=>dur?(MIN_GAP/dur):0;
+        const setPositions=()=>{const l=startPct*100,r=endPct*100;startH.style.left=l+'%';endH.style.left=r+'%';fill.style.left=l+'%';fill.style.width=Math.max(0,r-l)+'%';const s=dur*startPct,e=dur*endPct;tStart.textContent=fmt(s||0);tEnd.textContent=fmt(e||0);tLen.textContent=fmt(Math.max(0,e-s));};
+        const pctFromEvent=(ev)=>{const rect=track.getBoundingClientRect();const x=('touches'in ev&&ev.touches?.length)?ev.touches[0].clientX:ev.clientX;return Math.max(0,Math.min(1,(x-rect.left)/rect.width));};
+        const onMove=(ev)=>{let p=pctFromEvent(ev),mg=minGapPct();if(dragging==='start')startPct=Math.min(endPct-mg,p);if(dragging==='end')endPct=Math.max(startPct+mg,p);setPositions();};
+        const endDrag=()=>{dragging=null;window.removeEventListener('pointermove',onMove);};
+        const startDrag=(w)=>(ev)=>{dragging=w;ev.preventDefault();window.addEventListener('pointermove',onMove);window.addEventListener('pointerup',endDrag,{once:true});};
+        startH.addEventListener('pointerdown',startDrag('start'));
+        endH.addEventListener('pointerdown',startDrag('end'));
+        track.addEventListener('pointerdown',(ev)=>{if(ev.target===startH||ev.target===endH)return;const p=pctFromEvent(ev),mg=minGapPct();if(Math.abs(p-startPct)<=Math.abs(p-endPct))startPct=Math.min(endPct-mg,p);else endPct=Math.max(startPct+mg,p);setPositions();});
+        const step=0.005;
+        function keyMove(which,dir){const mg=minGapPct();if(which==='start')startPct=Math.max(0,Math.min(endPct-mg,startPct+dir*step));else endPct=Math.min(1,Math.max(startPct+mg,endPct+dir*step));setPositions();}
+        startH.addEventListener('keydown',(e)=>{if(e.key==='ArrowLeft')keyMove('start',-1); if(e.key==='ArrowRight')keyMove('start',1);});
+        endH.addEventListener('keydown',(e)=>{if(e.key==='ArrowLeft')keyMove('end',-1);   if(e.key==='ArrowRight')keyMove('end',1);});
+        ensureMeta(video).then(()=>{dur=video.duration||0;startPct=0;endPct=1;setPositions();});
+
+        btnPrev?.addEventListener('click', async ()=>{
+          await ensureMeta(video);
+          IS_BUSY=true; card.classList.add('is-previewing');
+          try{
+            const s=dur*startPct,e=dur*endPct;
+            video.muted=true; await seekTo(video,s);
+            const update=()=>{const p=Math.min(1,Math.max(0,(video.currentTime-s)/Math.max(1e-6,e-s)));playhead.style.left=(startPct+p*(endPct-startPct))*100+'%';if(video.currentTime>=e){video.pause();video.removeEventListener('timeupdate',update);card.classList.remove('is-previewing');IS_BUSY=false;}}
+            video.addEventListener('timeupdate',update);
+            await video.play();
+          }catch{card.classList.remove('is-previewing');IS_BUSY=false;}
+        });
+
+        btnClip?.addEventListener('click', async ()=>{
+          await ensureMeta(video);
+          const s=dur*startPct,e=dur*endPct;
+          IS_BUSY=true; btnClip.disabled=true; btnClip.textContent='Cortando…'; card.classList.add('is-clipping'); bar.style.width='0%';
+          const nameBase=(card.querySelector('.caption')?.textContent||'clip').replace(/\s+/g,'-');
+          let usedFF=false; let oldTime=video.currentTime, wasPaused=video.paused, oldVis=video.style.visibility;
+          try{
+            const mime=pickMime(); const stream=await getVideoStream(video);
+            if(!mime||!stream) throw new Error('no-capture');
+            video.muted=true; video.style.visibility='hidden'; await seekTo(video,s);
+            let chunks=[]; const rec=new MediaRecorder(stream,{mimeType:mime});
+            rec.ondataavailable=(ev)=>ev.data&&ev.data.size&&chunks.push(ev.data);
+            const stopped=new Promise(res=>rec.onstop=res); rec.start();
+            const updateProg=()=>{const pct=Math.min(1,Math.max(0,(video.currentTime-s)/Math.max(1e-6,e-s))); bar.style.width=(pct*100)+'%'; if(video.currentTime>=e){try{rec.requestData?.();}catch{} try{rec.stop();}catch{} video.removeEventListener('timeupdate',updateProg);} };
+            video.addEventListener('timeupdate',updateProg);
+            await video.play(); await stopped;
+            const blob=new Blob(chunks,{type:mime}); if(!blob.size) throw new Error('empty');
+            const ext=(mime.split('/')[1]||'webm').split(';')[0]; const url=URL.createObjectURL(blob);
+            const a=Object.assign(document.createElement('a'),{href:url,download:`${nameBase}-${fmt(s).replace(/:/g,'')}-${fmt(e).replace(/:/g,'')}.${ext}`}); document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+          }catch(err){
+            usedFF=true;
+            try{
+              const blob=await trimWithFFmpeg(video.currentSrc||video.src,s,e,(r)=>bar.style.width=(r*100)+'%');
+              const ext=blob.type.includes('mp4')?'mp4':'webm'; const url=URL.createObjectURL(blob);
+              const a=Object.assign(document.createElement('a'),{href:url,download:`${nameBase}-${fmt(s).replace(/:/g,'')}-${fmt(e).replace(/:/g,'')}.${ext}`}); document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+            }catch(e2){console.error(e2); alert('No se pudo generar el recorte.\nProbá en Chrome/Edge de escritorio o vuelve a intentar.');}
+          }finally{
+            if(!usedFF){try{video.pause();}catch{} try{video.currentTime=oldTime;}catch{} video.style.visibility=oldVis||''; if(!wasPaused){try{await video.play();}catch{}} else {try{video.pause();}catch{}}}
+            btnClip.disabled=false; btnClip.textContent='Recortar y descargar'; card.classList.remove('is-clipping'); IS_BUSY=false; bar.style.width='0%';
+          }
+        });
+      });
+    </script>
   </body>
 </html>
