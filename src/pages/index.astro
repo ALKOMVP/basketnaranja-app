@@ -3,16 +3,16 @@
 const toList = (mods: Record<string, any>, re: RegExp, fallback: string) =>
   Object.entries(mods).map(([path, url]) => ({
     url: url as string,
-    name: path.split('/').pop()?.replace(re, '') ?? fallback
+    name: path.split("/").pop()?.replace(re, "") ?? fallback,
   }));
 
-const videoMods = import.meta.glob('../assets/videos/*.{mp4,webm,mov}', { eager: true, import: 'default' });
-const photoMods = import.meta.glob('../assets/photos/*.{jpg,jpeg,png,webp,avif}', { eager: true, import: 'default' });
-const gifMods   = import.meta.glob('../assets/gifs/*.{gif,webp}', { eager: true, import: 'default' });
+const videoMods = import.meta.glob("../assets/videos/*.{mp4,webm,mov}", { eager: true, import: "default" });
+const photoMods = import.meta.glob("../assets/photos/*.{jpg,jpeg,png,webp,avif}", { eager: true, import: "default" });
+const gifMods   = import.meta.glob("../assets/gifs/*.{gif,webp}", { eager: true, import: "default" });
 
-const videos = toList(videoMods, /(\.(mp4|webm|mov))$/i, 'video');
-const photos = toList(photoMods, /(\.(jpg|jpeg|png|webp|avif))$/i, 'photo');
-const gifs   = toList(gifMods,   /(\.(gif|webp))$/i, 'gif');
+const videos = toList(videoMods, /(\.(mp4|webm|mov))$/i, "video");
+const photos = toList(photoMods, /(\.(jpg|jpeg|png|webp|avif))$/i, "photo");
+const gifs   = toList(gifMods,   /(\.(gif|webp))$/i, "gif");
 ---
 
 <!doctype html>
@@ -27,11 +27,11 @@ const gifs   = toList(gifMods,   /(\.(gif|webp))$/i, 'gif');
       :root{
         --bg:#f08030; --bg2:#f18c44; --panel:#ffffff; --ink:#0f172a; --muted:#6b7280; --radius:16px;
         --ring:0 0 0 1px rgba(15,23,42,.06), 0 1px 2px rgba(15,23,42,.08), 0 8px 24px rgba(15,23,42,.08);
-        --accent:#111827;
+        --accent:#111827; --ok:#16a34a;
       }
       *{box-sizing:border-box}
       html,body{height:100%}
-      html{scroll-behavior:smooth} /* fallback suave para anclas */
+      html{scroll-behavior:smooth}
       body{
         margin:0; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
         color:var(--ink); display:grid; place-items:center; padding:24px;
@@ -76,43 +76,64 @@ const gifs   = toList(gifMods,   /(\.(gif|webp))$/i, 'gif');
       .vid video{width:100%; aspect-ratio:16/9; display:block; border-radius:10px}
       .caption{margin:8px 0 0; font-size:12px; color:var(--muted); text-align:center}
 
-      /* Recorte: barra unificada */
+      /* Draft actual */
+      .draft{margin-bottom:14px}
+      .draft-header{display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px}
+      .iconrow{display:flex; gap:8px}
+      .iconbtn{
+        width:36px; height:36px; display:grid; place-items:center; border-radius:10px;
+        border:1px solid rgba(2,6,23,.14); background:#fff; cursor:pointer; color:var(--ink);
+      }
+      .iconbtn:hover{background:#f3f4f6}
+      .iconbtn.done{box-shadow:0 0 0 2px rgba(22,163,74,.25) inset}
+      .iconbtn svg{width:18px; height:18px; display:block}
+      .iconbtn.share{background:#25D366; border-color:#25D366; color:#fff}
+      .iconbtn.share:hover{filter:brightness(.95)}
+
+      .teams{
+        display:grid !important; gap:12px;
+        grid-template-columns: repeat(3, minmax(0,1fr)) !important;
+      }
+      /* Fallback por si algo de terceros pisa el grid */
+      @supports not (grid-template-columns: repeat(3, minmax(0,1fr))) {
+        .teams{display:flex; gap:12px}
+        .teams>.team{flex:1 1 0}
+      }
+      @media (max-width: 980px){ .teams{grid-template-columns: repeat(2, minmax(0,1fr)) !important;} }
+      @media (max-width: 640px){ .teams{grid-template-columns: 1fr !important;} }
+
+      .team{position:relative; background:#fff; border:1px solid rgba(2,6,23,.08); border-radius:12px; padding:14px; box-shadow:var(--ring); min-width:0}
+      .team h3{margin:0 0 8px; font-size:16px}
+      .team .copy{position:absolute; top:10px; right:10px}
+      .team ul{margin:6px 0 0; padding-left:18px}
+      .team li{line-height:1.6}
+      .team.white h3{color:#111827}
+      .team.red h3{color:#b91c1c}
+      .team.black h3{color:#111827}
+
+      /* Recorte */
       .clipper{margin-top:12px; display:grid; gap:10px}
       .trimbar{display:grid; gap:8px}
       .track{position:relative; height:48px; user-select:none}
       .rail{position:absolute; left:0; right:0; height:8px; top:50%; transform:translateY(-50%);
             border-radius:999px; background:rgba(2,6,23,.12); z-index:0}
-      .fill{position:absolute; height:8px; top:50%; transform:translateY(-50%);
-            border-radius:999px; background:var(--accent); z-index:1}
-      .handle{
-        position:absolute; top:50%; transform:translate(-50%,-50%);
-        width:22px; height:22px; border-radius:50%; background:var(--accent); border:3px solid #fff;
-        box-shadow:0 2px 6px rgba(2,6,23,.2); cursor:grab; touch-action:none; z-index:3;
-      }
+      .fill{position:absolute; height:8px; top:50%; transform:translateY(-50%); border-radius:999px; background:var(--accent); z-index:1}
+      .handle{position:absolute; top:50%; transform:translate(-50%,-50%); width:22px; height:22px; border-radius:50%; background:var(--accent); border:3px solid #fff; box-shadow:0 2px 6px rgba(2,6,23,.2); cursor:grab; touch-action:none; z-index:3;}
       .handle:active{cursor:grabbing}
       .handle:focus-visible{outline:3px solid rgba(17,24,39,.25)}
-      .playhead{position:absolute; top:50%; transform:translate(-50%,-50%); width:2px; height:22px;
-                background:#0f172a; border-radius:1px; box-shadow:0 0 0 1px #fff; z-index:2; display:none}
+      .playhead{position:absolute; top:50%; transform:translate(-50%,-50%); width:2px; height:22px; background:#0f172a; border-radius:1px; box-shadow:0 0 0 1px #fff; z-index:2; display:none}
       .vid.is-previewing .playhead{display:block}
-
       .trim-info{display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--muted)}
       .trim-actions{display:flex; gap:8px; justify-content:flex-end}
       .btn.sm{padding:10px 12px; border-radius:10px; font-weight:700}
-
-      /* Overlay recortando (compacto y por encima) */
-      .overlay{position:absolute; inset:12px; border-radius:12px; background:rgba(255,255,255,.94);
-               display:none; place-items:center; place-content:center; gap:6px; padding:14px; z-index:100; margin-bottom: 40px;}
+      .overlay{position:absolute; inset:12px; border-radius:12px; background:rgba(255,255,255,.94); display:none; place-items:center; place-content:center; gap:6px; padding:14px; z-index:100; margin-bottom: 40px;}
       .vid.is-clipping .overlay{display:grid}
-      .spinner{width:32px; height:32px; border-radius:50%; border:3px solid #e5e7eb; border-top-color:var(--accent);
-               animation:spin .8s linear infinite}
+      .spinner{width:32px; height:32px; border-radius:50%; border:3px solid #e5e7eb; border-top-color:var(--accent); animation:spin .8s linear infinite}
       @keyframes spin{to{transform:rotate(360deg)}}
       .progress{width:min(100%,420px); height:8px; background:#e5e7eb; border-radius:999px; overflow:hidden}
       .bar{width:0%; height:100%; background:var(--accent); transition:width .1s linear}
 
-      @media (max-width:720px){
-        .header{flex-direction:column; align-items:flex-start}
-      }
-      /* Filtro */
+      /* Filtro videos */
       .filters{display:flex; gap:8px; align-items:center; margin:8px 0 12px}
       .select{padding:10px 12px; border-radius:10px; border:1px solid rgba(2,6,23,.14); background:#fff}
       .count{font-size:12px; color:var(--muted)}
@@ -126,19 +147,86 @@ const gifs   = toList(gifMods,   /(\.(gif|webp))$/i, 'gif');
           <img src="/mascot.png" alt="Logo" class="logo" />
           <h1>Basketnaranja</h1>
         </div>
-    <nav class="menu" aria-label="Secciones">
-		<a href="/#pagar"  data-scroll="pagar">Pagar</a>
-		<a href="/#videos" data-scroll="videos">Videos</a>
-	</nav>
+        <nav class="menu" aria-label="Secciones">
+          <a href="/#pagar" data-scroll="pagar">Pagar</a>
+          <a href="/#videos" data-scroll="videos">Videos</a>
+        </nav>
       </div>
+
+      <!-- Draft actual -->
+      <section class="panel draft" id="draft">
+        <div class="draft-header">
+          <h2>Draft actual</h2>
+          <div class="iconrow">
+            <button id="copyAll" class="iconbtn" title="Copiar todo" aria-label="Copiar todo">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"></path>
+              </svg>
+            </button>
+            <button id="shareAll" class="iconbtn share" title="Compartir por WhatsApp" aria-label="Compartir por WhatsApp">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 2L11 13"></path><path d="M22 2l-7 20-4-9-9-4 20-7z"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="teams">
+          <div class="team white">
+            <h3>Equipo blanco 🤍</h3>
+            <button class="iconbtn copy" type="button" title="Copiar equipo blanco" aria-label="Copiar equipo blanco">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"></path>
+              </svg>
+            </button>
+            <ul>
+              <li>Catra</li>
+              <li>Tiotiotio sahur</li>
+              <li>All-in</li>
+              <li>Micurry</li>
+              <li>lu</li>
+            </ul>
+          </div>
+
+          <div class="team red">
+            <h3>Equipo color ❤️</h3>
+            <button class="iconbtn copy" type="button" title="Copiar equipo color" aria-label="Copiar equipo color">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"></path>
+              </svg>
+            </button>
+            <ul>
+              <li>Valen</li>
+              <li>Lonzito</li>
+              <li>lifa</li>
+              <li>veci</li>
+              <li>dani</li>
+            </ul>
+          </div>
+
+          <div class="team black">
+            <h3>Equipo negro 🖤</h3>
+            <button class="iconbtn copy" type="button" title="Copiar equipo negro" aria-label="Copiar equipo negro">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"></path>
+              </svg>
+            </button>
+            <ul>
+              <li>Fran</li>
+              <li>Vansi</li>
+              <li>Edu</li>
+              <li>Sofi</li>
+              <li>Cami</li>
+            </ul>
+          </div>
+        </div>
+      </section>
 
       <!-- Pagar -->
       <div class="panel" id="pagar">
         <h2>Pagar</h2>
         <p class="lead">Escaneá el QR o tocá el botón para abrir directamente el link de pago.</p>
-        <div class="qr-wrap">
-          <img class="qr" src="/qr.png" alt="QR de pago Mercado Pago" />
-        </div>
+        <div class="qr-wrap"><img class="qr" src="/qr.png" alt="QR de pago Mercado Pago" /></div>
         <div class="cta">
           <a class="btn primary" id="openPayment" href="https://mpago.la/2gWsByC" target="_blank" rel="noopener noreferrer">Pagar ahora</a>
           <button class="btn" id="copyLink" type="button" aria-label="Copiar link de pago">Copiar link</button>
@@ -150,7 +238,6 @@ const gifs   = toList(gifMods,   /(\.(gif|webp))$/i, 'gif');
       <section class="panel media-col videos" id="videos" style="margin-top:1rem">
         <h2>Videos</h2>
 
-        <!-- UI del filtro (opciones se cargan en el cliente a partir de los nombres) -->
         <div class="filters">
           <label for="dateFilter"><strong>Fecha</strong></label>
           <select id="dateFilter" class="select" aria-label="Filtrar por fecha">
@@ -202,126 +289,89 @@ const gifs   = toList(gifMods,   /(\.(gif|webp))$/i, 'gif');
     </div>
 
     <script is:inline>
-      // ===== Smooth scroll por "rutas" /pagar y /videos =====
-      function scrollToId(id){
-        const el = document.getElementById(id);
-        if (!el) return;
-        const y = el.getBoundingClientRect().top + window.scrollY - 10;
-        window.scrollTo({ top: y, behavior: 'smooth' });
-      }
-      function getSlug(pathname){
-        // soporta /, /pagar, /videos y subcarpetas (p.ej. /app/pagar)
-        const parts = pathname.split('?')[0].split('#')[0].split('/').filter(Boolean);
-        return parts[parts.length - 1] || '';
-      }
+      // ===== Draft: copiar equipo / copiar todo / compartir =====
+      (function(){
+        const flash=(btn)=>{btn.classList.add('done'); setTimeout(()=>btn.classList.remove('done'), 900);};
 
-	  function routeToSection() {
-    const slug = location.hash.replace('#','') || getSlug(location.pathname);
-		if (slug === 'pagar')  scrollToId('pagar');
-		if (slug === 'videos') scrollToId('videos');
-	}
-	window.addEventListener('DOMContentLoaded', routeToSection);
-	window.addEventListener('popstate', routeToSection);
-	window.addEventListener('hashchange', routeToSection);
-      function routeToSection(pathname = location.pathname){
-        const slug = getSlug(pathname);
-        if (slug === 'pagar')  scrollToId('pagar');
-        if (slug === 'videos') scrollToId('videos');
-      }
-      // Click en menú: evita recarga, hace scroll y actualiza historia
-      document.querySelectorAll('[data-scroll]').forEach(a=>{
-        a.addEventListener('click', (e)=>{
-          e.preventDefault();
-          const id = a.getAttribute('data-scroll');
-          history.pushState({}, '', '/' + id);
-          routeToSection();
+        document.querySelectorAll('.team .copy').forEach(btn=>{
+          btn.addEventListener('click', async ()=>{
+            const team=btn.closest('.team'); if(!team) return;
+            const title=team.querySelector('h3')?.textContent?.trim()||'Equipo';
+            const names=Array.from(team.querySelectorAll('li')).map(li=>li.textContent.trim()).join('\n');
+            try{ await navigator.clipboard.writeText(`${title}\n${names}`); flash(btn);}catch{}
+          });
         });
-      });
-      // Al cargar y al usar atrás/adelante
+
+        const teams=document.querySelectorAll('.team');
+        const getText=()=> Array.from(teams).map(t=>{
+          const title=t.querySelector('h3')?.textContent?.trim()||'';
+          const names=Array.from(t.querySelectorAll('li')).map(li=>li.textContent.trim()).join('\n');
+          return `${title}\n${names}`;
+        }).join('\n\n');
+
+        const copyAll=document.getElementById('copyAll');
+        const shareAll=document.getElementById('shareAll');
+        copyAll?.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(getText()); flash(copyAll);}catch{} });
+        shareAll?.addEventListener('click', async ()=>{
+          const text=getText();
+          if(navigator.share){ try{ await navigator.share({ text }); }catch{} }
+          else{ window.open(`https://wa.me/?text=${encodeURIComponent(text)}`,'_blank'); }
+        });
+      })();
+
+      // ===== Smooth scroll / rutas =====
+      function scrollToId(id){ const el=document.getElementById(id); if(!el) return; const y=el.getBoundingClientRect().top+window.scrollY-10; window.scrollTo({top:y,behavior:'smooth'}); }
+      function getSlug(pathname){ const p=pathname.split('?')[0].split('#')[0].split('/').filter(Boolean); return p[p.length-1]||''; }
+      function routeToSection(){ const slug=location.hash.replace('#','')||getSlug(location.pathname); if(slug==='pagar') scrollToId('pagar'); if(slug==='videos') scrollToId('videos'); }
+      window.addEventListener('DOMContentLoaded', routeToSection);
+      window.addEventListener('popstate', routeToSection);
+      window.addEventListener('hashchange', routeToSection);
+      function routeToSection(pathname = location.pathname){ const slug=getSlug(pathname); if(slug==='pagar') scrollToId('pagar'); if(slug==='videos') scrollToId('videos'); }
+      document.querySelectorAll('[data-scroll]').forEach(a=>{ a.addEventListener('click', (e)=>{ e.preventDefault(); const id=a.getAttribute('data-scroll'); history.pushState({}, '', '/' + id); routeToSection(); }); });
       window.addEventListener('DOMContentLoaded', routeToSection);
       window.addEventListener('popstate', ()=> routeToSection());
 
-      // ===== Copiar link de pago
-      const PAYMENT_URL = 'https://mpago.la/2gWsByC';
-      document.getElementById('copyLink')?.addEventListener('click', async () => {
-        try {
-          await navigator.clipboard.writeText(PAYMENT_URL);
-          const btn = document.getElementById('copyLink');
-          const old = btn.textContent;
-          btn.textContent = '¡Link copiado!';
-          setTimeout(() => (btn.textContent = old), 1500);
-        } catch {}
+      // ===== Copiar link de pago =====
+      const PAYMENT_URL='https://mpago.la/2gWsByC';
+      document.getElementById('copyLink')?.addEventListener('click', async ()=>{
+        try{ await navigator.clipboard.writeText(PAYMENT_URL);
+          const btn=document.getElementById('copyLink'); const old=btn.textContent; btn.textContent='¡Link copiado!'; setTimeout(()=>btn.textContent=old,1500);
+        }catch{}
       });
 
-      // ===== Filtro por fecha (solo añade funcionalidad, no toca recorte) =====
+      // ===== Filtro por fecha (no toca recorte) =====
       (function(){
-        const $grid = document.getElementById('videoGrid');
-        const $sel = document.getElementById('dateFilter');
-        const $count = document.getElementById('videoCount');
-        const $clear = document.getElementById('clearFilter');
-        if(!$grid || !$sel) return;
+        const $grid=document.getElementById('videoGrid');
+        const $sel=document.getElementById('dateFilter');
+        const $count=document.getElementById('videoCount');
+        const $clear=document.getElementById('clearFilter');
+        if(!$grid||!$sel) return;
 
-        // Extrae YYYY-MM-DD desde el nombre mostrado en la figcaption
-        const extract = (text)=>{
-          // soporta "2025-09-28", "2025_09_28", y variantes tipo WhatsApp "2025-10-06"
-          const m = (text||'').match(/(20\d{2})[\-_/ ](\d{2})[\-_/ ](\d{2})/);
-          if(!m) return '';
-          return `${m[1]}-${m[2]}-${m[3]}`;
-        };
+        const extract=(text)=>{ const m=(text||'').match(/(20\d{2})[\-_/ ](\d{2})[\-_/ ](\d{2})/); return m?`${m[1]}-${m[2]}-${m[3]}`:''; };
 
-        // Inicializa data-date en cada figure y junta el conjunto de fechas únicas
-        const figures = Array.from($grid.querySelectorAll('.vid'));
-        const setDates = new Set();
+        const figures=Array.from($grid.querySelectorAll('.vid'));
+        const setDates=new Set();
         for(const fig of figures){
-          const caption = fig.querySelector('.caption')?.textContent || '';
-          const d = extract(caption);
-          if(d){ fig.dataset.date = d; setDates.add(d); }
+          const d=extract(fig.querySelector('.caption')?.textContent||'');
+          if(d){ fig.dataset.date=d; setDates.add(d); }
         }
-        // Pobla el <select> con las fechas encontradas (más recientes primero)
-        const dates = Array.from(setDates).sort((a,b)=> b.localeCompare(a));
-        for(const d of dates){
-          const opt = document.createElement('option');
-          opt.value = d; opt.textContent = d; $sel.appendChild(opt);
-        }
+        const dates=Array.from(setDates).sort((a,b)=>b.localeCompare(a));
+        for(const d of dates){ const opt=document.createElement('option'); opt.value=d; opt.textContent=d; $sel.appendChild(opt); }
 
-        function apply(date){
-          let shown = 0;
-          for(const fig of figures){
-            const ok = !date || fig.dataset.date === date;
-            fig.style.display = ok ? '' : 'none';
-            if(ok) shown++;
-          }
-          if($count) $count.textContent = `${shown} video${shown===1?'':'s'} mostrados`;
-        }
-        function syncURL(date){
-          const url = new URL(location.href);
-          if(date) url.searchParams.set('date', date); else url.searchParams.delete('date');
-          history.replaceState({}, '', url);
-        }
-        function initFromURL(){
-          const url = new URL(location.href);
-          const d = url.searchParams.get('date') || '';
-          if(d){ $sel.value = d; }
-          apply(d);
-        }
+        function apply(date){ let shown=0; for(const fig of figures){ const ok=!date||fig.dataset.date===date; fig.style.display=ok?'':'none'; if(ok) shown++; } if($count) $count.textContent=`${shown} video${shown===1?'':'s'} mostrados`; }
+        function syncURL(date){ const url=new URL(location.href); if(date) url.searchParams.set('date',date); else url.searchParams.delete('date'); history.replaceState({},'',url); }
+        function initFromURL(){ const d=new URL(location.href).searchParams.get('date')||''; if(d) $sel.value=d; apply(d); }
 
-        $sel.addEventListener('change', ()=>{ const d = $sel.value; apply(d); syncURL(d); });
-        $clear.addEventListener('click', ()=>{ $sel.value = ''; apply(''); syncURL(''); });
+        $sel.addEventListener('change', ()=>{ const d=$sel.value; apply(d); syncURL(d); });
+        $clear.addEventListener('click', ()=>{ $sel.value=''; apply(''); syncURL(''); });
         window.addEventListener('DOMContentLoaded', initFromURL);
       })();
 
-      // ===== (tu lógica de fullscreen y recorte queda igual que la versión anterior) =====
-      let IS_BUSY = false;
-      function goFullscreen(el){
-        if (IS_BUSY || document.fullscreenElement) return;
-        try { el.requestFullscreen?.(); el.webkitEnterFullscreen?.(); } catch {}
-      }
-      document.querySelectorAll('.videos video').forEach((v) => {
-        v.addEventListener('play', () => goFullscreen(v));
-        v.addEventListener('pointerup', () => { if (!v.paused) goFullscreen(v); });
-      });
+      // ===== Fullscreen + recorte (intacto) =====
+      let IS_BUSY=false;
+      function goFullscreen(el){ if(IS_BUSY||document.fullscreenElement) return; try{ el.requestFullscreen?.(); el.webkitEnterFullscreen?.(); }catch{} }
+      document.querySelectorAll('.videos video').forEach((v)=>{ v.addEventListener('play',()=>goFullscreen(v)); v.addEventListener('pointerup',()=>{ if(!v.paused) goFullscreen(v); }); });
 
-      // --- utilidades tiempo + trimming (las que ya tenías) ---
       const fmt=(t)=>{const s=Math.floor(t%60).toString().padStart(2,'0');const m=Math.floor((t/60)%60).toString().padStart(2,'0');const h=Math.floor(t/3600);return h?`${h}:${m}:${s}`:`${m}:${s}`;};
       const ensureMeta=(v)=>v.readyState>=1?Promise.resolve():new Promise(res=>v.addEventListener('loadedmetadata',res,{once:true}));
       const seekTo=(v,t)=>new Promise(res=>{const T=Math.max(0,Math.min(t,isFinite(v.duration)?v.duration:t));v.addEventListener('seeked',res,{once:true});v.currentTime=T;});
@@ -332,17 +382,16 @@ const gifs   = toList(gifMods,   /(\.(gif|webp))$/i, 'gif');
       async function trimWithFFmpeg(src,start,end,onProgress){const FF=await ensureFFmpeg();const{createFFmpeg,fetchFile}=FF;const ff=createFFmpeg({log:false,progress:({ratio})=>onProgress?.(ratio||0)});await ff.load();const data=await fetchFile(src);ff.FS('writeFile','in.bin',data);try{await ff.run('-ss',String(start),'-to',String(end),'-i','in.bin','-c','copy','out.mp4');const out=ff.FS('readFile','out.mp4');return new Blob([out.buffer],{type:'video/mp4'});}catch{await ff.run('-ss',String(start),'-to',String(end),'-i','in.bin','-c:v','libvpx-vp9','-c:a','libopus','-b:v','1M','out.webm');const out=ff.FS('readFile','out.webm');return new Blob([out.buffer],{type:'video/webm'});}}
 
       const MIN_GAP=0.2;
-
       document.querySelectorAll('.vid').forEach((card)=>{
         const video=card.querySelector('video');
         const track=card.querySelector('.track');
-        const fill =card.querySelector('.fill');
+        const fill=card.querySelector('.fill');
         const startH=card.querySelector('.h-start');
-        const endH  =card.querySelector('.h-end');
+        const endH=card.querySelector('.h-end');
         const playhead=card.querySelector('.playhead');
         const tStart=card.querySelector('.t-start');
-        const tEnd  =card.querySelector('.t-end');
-        const tLen  =card.querySelector('.t-len');
+        const tEnd=card.querySelector('.t-end');
+        const tLen=card.querySelector('.t-len');
         const btnPrev=card.querySelector('[data-act="preview"]');
         const btnClip=card.querySelector('.btn-clip');
         const overlay=card.querySelector('.overlay');
@@ -366,20 +415,20 @@ const gifs   = toList(gifMods,   /(\.(gif|webp))$/i, 'gif');
 
         btnPrev?.addEventListener('click', async ()=>{
           await ensureMeta(video);
-          IS_BUSY=true; card.classList.add('is-previewing');
+          let IS_BUSY=true; card.classList.add('is-previewing');
           try{
             const s=dur*startPct,e=dur*endPct;
             video.muted=true; await seekTo(video,s);
             const update=()=>{const p=Math.min(1,Math.max(0,(video.currentTime-s)/Math.max(1e-6,e-s)));playhead.style.left=(startPct+p*(endPct-startPct))*100+'%';if(video.currentTime>=e){video.pause();video.removeEventListener('timeupdate',update);card.classList.remove('is-previewing');IS_BUSY=false;}}
             video.addEventListener('timeupdate',update);
             await video.play();
-          }catch{card.classList.remove('is-previewing');IS_BUSY=false;}
+          }catch{card.classList.remove('is-previewing');}
         });
 
         btnClip?.addEventListener('click', async ()=>{
           await ensureMeta(video);
           const s=dur*startPct,e=dur*endPct;
-          IS_BUSY=true; btnClip.disabled=true; btnClip.textContent='Cortando…'; card.classList.add('is-clipping'); bar.style.width='0%';
+          btnClip.disabled=true; btnClip.textContent='Cortando…'; card.classList.add('is-clipping'); bar.style.width='0%';
           const nameBase=(card.querySelector('.caption')?.textContent||'clip').replace(/\s+/g,'-');
           let usedFF=false; let oldTime=video.currentTime, wasPaused=video.paused, oldVis=video.style.visibility;
           try{
@@ -404,7 +453,7 @@ const gifs   = toList(gifMods,   /(\.(gif|webp))$/i, 'gif');
             }catch(e2){console.error(e2); alert('No se pudo generar el recorte.\nProbá en Chrome/Edge de escritorio o vuelve a intentar.');}
           }finally{
             if(!usedFF){try{video.pause();}catch{} try{video.currentTime=oldTime;}catch{} video.style.visibility=oldVis||''; if(!wasPaused){try{await video.play();}catch{}} else {try{video.pause();}catch{}}}
-            btnClip.disabled=false; btnClip.textContent='Recortar y descargar'; card.classList.remove('is-clipping'); IS_BUSY=false; bar.style.width='0%';
+            btnClip.disabled=false; btnClip.textContent='Recortar y descargar'; card.classList.remove('is-clipping'); bar.style.width='0%';
           }
         });
       });
