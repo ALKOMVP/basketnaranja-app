@@ -10,9 +10,9 @@ const videoMods = import.meta.glob('../assets/videos/*.{mp4,webm,mov}', { eager:
 const photoMods = import.meta.glob('../assets/photos/*.{jpg,jpeg,png,webp,avif}', { eager: true, import: 'default' });
 const gifMods   = import.meta.glob('../assets/gifs/*.{gif,webp}', { eager: true, import: 'default' });
 
-const videos = toList(videoMods, /\.(mp4|webm|mov)$/i, 'video');
-const photos = toList(photoMods, /\.(jpg|jpeg|png|webp|avif)$/i, 'photo');
-const gifs   = toList(gifMods,   /\.(gif|webp)$/i, 'gif');
+const videos = toList(videoMods, /(\.(mp4|webm|mov))$/i, 'video');
+const photos = toList(photoMods, /(\.(jpg|jpeg|png|webp|avif))$/i, 'photo');
+const gifs   = toList(gifMods,   /(\.(gif|webp))$/i, 'gif');
 ---
 
 <!doctype html>
@@ -112,6 +112,10 @@ const gifs   = toList(gifMods,   /\.(gif|webp)$/i, 'gif');
       @media (max-width:720px){
         .header{flex-direction:column; align-items:flex-start}
       }
+      /* Filtro */
+      .filters{display:flex; gap:8px; align-items:center; margin:8px 0 12px}
+      .select{padding:10px 12px; border-radius:10px; border:1px solid rgba(2,6,23,.14); background:#fff}
+      .count{font-size:12px; color:var(--muted)}
     </style>
   </head>
   <body>
@@ -145,10 +149,21 @@ const gifs   = toList(gifMods,   /\.(gif|webp)$/i, 'gif');
       <!-- Videos -->
       <section class="panel media-col videos" id="videos" style="margin-top:1rem">
         <h2>Videos</h2>
+
+        <!-- UI del filtro (opciones se cargan en el cliente a partir de los nombres) -->
+        <div class="filters">
+          <label for="dateFilter"><strong>Fecha</strong></label>
+          <select id="dateFilter" class="select" aria-label="Filtrar por fecha">
+            <option value="">Todas</option>
+          </select>
+          <button id="clearFilter" class="btn sm" type="button">Limpiar</button>
+          <span class="count" id="videoCount"></span>
+        </div>
+
         {videos.length > 0 ? (
-          <div class="grid">
+          <div class="grid" id="videoGrid">
             {videos.map((v) => (
-              <figure class="vid">
+              <figure class="vid" data-date="">
                 <video src={v.url} controls preload="metadata"></video>
                 <figcaption class="caption">{v.name}</figcaption>
 
@@ -237,6 +252,63 @@ const gifs   = toList(gifMods,   /\.(gif|webp)$/i, 'gif');
           setTimeout(() => (btn.textContent = old), 1500);
         } catch {}
       });
+
+      // ===== Filtro por fecha (solo añade funcionalidad, no toca recorte) =====
+      (function(){
+        const $grid = document.getElementById('videoGrid');
+        const $sel = document.getElementById('dateFilter');
+        const $count = document.getElementById('videoCount');
+        const $clear = document.getElementById('clearFilter');
+        if(!$grid || !$sel) return;
+
+        // Extrae YYYY-MM-DD desde el nombre mostrado en la figcaption
+        const extract = (text)=>{
+          // soporta "2025-09-28", "2025_09_28", y variantes tipo WhatsApp "2025-10-06"
+          const m = (text||'').match(/(20\d{2})[\-_/ ](\d{2})[\-_/ ](\d{2})/);
+          if(!m) return '';
+          return `${m[1]}-${m[2]}-${m[3]}`;
+        };
+
+        // Inicializa data-date en cada figure y junta el conjunto de fechas únicas
+        const figures = Array.from($grid.querySelectorAll('.vid'));
+        const setDates = new Set();
+        for(const fig of figures){
+          const caption = fig.querySelector('.caption')?.textContent || '';
+          const d = extract(caption);
+          if(d){ fig.dataset.date = d; setDates.add(d); }
+        }
+        // Pobla el <select> con las fechas encontradas (más recientes primero)
+        const dates = Array.from(setDates).sort((a,b)=> b.localeCompare(a));
+        for(const d of dates){
+          const opt = document.createElement('option');
+          opt.value = d; opt.textContent = d; $sel.appendChild(opt);
+        }
+
+        function apply(date){
+          let shown = 0;
+          for(const fig of figures){
+            const ok = !date || fig.dataset.date === date;
+            fig.style.display = ok ? '' : 'none';
+            if(ok) shown++;
+          }
+          if($count) $count.textContent = `${shown} video${shown===1?'':'s'} mostrados`;
+        }
+        function syncURL(date){
+          const url = new URL(location.href);
+          if(date) url.searchParams.set('date', date); else url.searchParams.delete('date');
+          history.replaceState({}, '', url);
+        }
+        function initFromURL(){
+          const url = new URL(location.href);
+          const d = url.searchParams.get('date') || '';
+          if(d){ $sel.value = d; }
+          apply(d);
+        }
+
+        $sel.addEventListener('change', ()=>{ const d = $sel.value; apply(d); syncURL(d); });
+        $clear.addEventListener('click', ()=>{ $sel.value = ''; apply(''); syncURL(''); });
+        window.addEventListener('DOMContentLoaded', initFromURL);
+      })();
 
       // ===== (tu lógica de fullscreen y recorte queda igual que la versión anterior) =====
       let IS_BUSY = false;
